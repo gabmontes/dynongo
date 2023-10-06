@@ -1,10 +1,12 @@
-import { DynamoDB } from '../dynamodb';
-import { Executable } from './executable';
-import { Method } from './method';
-import { ListTablesInput } from 'aws-sdk/clients/dynamodb';
+import {
+	ListTablesCommand,
+	ListTablesCommandInput,
+} from "@aws-sdk/client-dynamodb";
+import { DynamoDB } from "../dynamodb";
+import { Executable } from "./executable";
+import { Method } from "./method";
 
 export class ListTables extends Method implements Executable {
-
 	constructor(dynamodb: DynamoDB) {
 		super(null, dynamodb);
 	}
@@ -12,38 +14,41 @@ export class ListTables extends Method implements Executable {
 	/**
 	 * Builds and returns the raw DynamoDB query object.
 	 */
-	buildRawQuery(): ListTablesInput {
+	buildRawQuery(): ListTablesCommandInput {
 		return {};
 	}
 
 	/**
 	 * Execute the `ListTables` request.
 	 */
-	exec(): Promise<string[]> {
+	async exec(): Promise<string[]> {
 		if (!this.dynamodb.raw) {
-			return Promise.reject(new Error('Call .connect() before executing queries.'));
+			throw new Error("Call .connect() before executing queries.");
 		}
 
 		return this.execHelper(this.buildRawQuery());
 	}
 
-	private execHelper(params: ListTablesInput, previousResult: string[] = []): Promise<string[]> {
+	private async execHelper(
+		params: ListTablesCommandInput,
+		previousResult: string[] = []
+	): Promise<string[]> {
 		let result = previousResult;
 
-		const db = this.dynamodb.raw !;
+		const db = this.dynamodb.raw!;
 		const prefix = this.dynamodb.prefix;
 
-		return db.listTables(params).promise()
-			.then(data => {
-				result = result.concat(data.TableNames || []);
+		const data = await db.send(new ListTablesCommand(params));
+		result = result.concat(data.TableNames || []);
 
-				if (data.LastEvaluatedTableName) {
-					params.ExclusiveStartTableName = data.LastEvaluatedTableName;
+		if (data.LastEvaluatedTableName) {
+			params.ExclusiveStartTableName = data.LastEvaluatedTableName;
 
-					return this.execHelper(params, result);
-				}
+			return this.execHelper(params, result);
+		}
 
-				return prefix === undefined ? result : result.filter(table => table.indexOf(prefix) === 0);
-			});
+		return prefix === undefined
+			? result
+			: result.filter((table) => table.indexOf(prefix) === 0);
 	}
 }

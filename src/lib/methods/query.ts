@@ -1,11 +1,10 @@
-import { QueryInput } from 'aws-sdk/clients/dynamodb';
-import { BaseQuery } from './base-query';
-import { Executable } from './executable';
-import { DynamoDB } from '../dynamodb';
-import { Table } from '../table';
+import { QueryCommandInput } from "@aws-sdk/lib-dynamodb";
+import { BaseQuery } from "./base-query";
+import { Executable } from "./executable";
+import { DynamoDB } from "../dynamodb";
+import { Table } from "../table";
 
 export class Query extends BaseQuery implements Executable {
-
 	private error: Error | null = null;
 
 	constructor(table: Table, dynamodb: DynamoDB) {
@@ -20,7 +19,9 @@ export class Query extends BaseQuery implements Executable {
 	sort(order: 1 | -1) {
 		if (order !== 1 && order !== -1) {
 			// Set the error if the order is invalid
-			this.error = new Error('Provided sort argument is incorrect. Use 1 for ascending and -1 for descending order.');
+			this.error = new Error(
+				"Provided sort argument is incorrect. Use 1 for ascending and -1 for descending order."
+			);
 		} else {
 			// Set the ScanIndexForward property
 			this.params.ScanIndexForward = order === 1;
@@ -33,13 +34,13 @@ export class Query extends BaseQuery implements Executable {
 	/**
 	 * Builds and returns the raw DynamoDB query object.
 	 */
-	buildRawQuery(): QueryInput {
+	buildRawQuery(): QueryCommandInput {
 		const limit = this.params.Limit;
 
-		const result: QueryInput = {
+		const result: QueryCommandInput = {
 			...this.params,
 			ConsistentRead: this.consistentRead,
-			TableName: (this.table !).name
+			TableName: this.table!.name,
 		};
 
 		if (limit === 1 && result.FilterExpression) {
@@ -52,44 +53,43 @@ export class Query extends BaseQuery implements Executable {
 	/**
 	 * Execute the query.
 	 */
-	exec(): Promise<any> {
+	async exec(): Promise<any> {
 		if (this.error) {
-			return Promise.reject(this.error);
+			throw this.error;
 		}
 
-		const db = this.dynamodb.dynamodb;
+		const db = this.dynamodb.raw;
 
 		if (!db) {
-			return Promise.reject(new Error('Call .connect() before executing queries.'));
+			throw new Error("Call .connect() before executing queries.");
 		}
 
 		const limit = this.params.Limit;
 
-		const query = this.buildRawQuery();
+		const queryInput = this.buildRawQuery();
 
-		return this.runQuery(() => db.query(query).promise())
-			.then(data => {
-				if (query.Select === 'COUNT') {
-					// Return the count property if Select is set to count.
-					return data.Count || 0;
+		return this.runQuery(() => db.query(queryInput)).then((data) => {
+			if (queryInput.Select === "COUNT") {
+				// Return the count property if Select is set to count.
+				return data.Count || 0;
+			}
+
+			if (!data.Items) {
+				return [];
+			}
+
+			if (limit === 1) {
+				// If the limit is specifically set to 1, we should return the object instead of the array.
+				if (this.rawResult === true) {
+					data.Items = [data.Items[0]];
+					return data;
 				}
 
-				if (!data.Items) {
-					return [];
-				}
+				return data.Items[0];
+			}
 
-				if (limit === 1) {
-					// If the limit is specifically set to 1, we should return the object instead of the array.
-					if (this.rawResult === true) {
-						data.Items = [data.Items[0]];
-						return data;
-					}
-
-					return data.Items[0];
-				}
-
-				// Return all the items
-				return this.rawResult === true ? data : data.Items;
-			});
+			// Return all the items
+			return this.rawResult === true ? data : data.Items;
+		});
 	}
 }

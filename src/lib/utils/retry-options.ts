@@ -1,11 +1,11 @@
-import { Options as RetryOptions } from 'p-retry';
+import { Options as RetryOptions } from "p-retry";
 
-const defaultRetryOptions: RetryOptions = {
+const defaultRetryOptions = {
 	retries: 5,
 	factor: 1,
 	minTimeout: 300,
 	maxTimeout: 2000,
-	randomize: true
+	randomize: true,
 };
 
 /**
@@ -13,12 +13,14 @@ const defaultRetryOptions: RetryOptions = {
  *
  * @param retries - Retry configuration.
  */
-export const configureRetryOptions = (retries: number | RetryOptions | undefined) => {
+export const configureRetryOptions = (
+	retries: number | RetryOptions | undefined
+) => {
 	if (retries === undefined) {
 		return;
 	}
 
-	return typeof retries === 'number'
-		? {...defaultRetryOptions, retries}
-		: {...defaultRetryOptions, ...retries};
+	return typeof retries === "number"
+		? { ...defaultRetryOptions, retries }
+		: { ...defaultRetryOptions, ...retries };
 };

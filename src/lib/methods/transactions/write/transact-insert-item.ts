@@ -1,11 +1,10 @@
-import { TransactWriteItem, Converter } from 'aws-sdk/clients/dynamodb';
+import { TransactWriteItem } from '@aws-sdk/client-dynamodb';
+import { marshall } from '@aws-sdk/util-dynamodb';
 import { TransactMethod } from '../transact-method';
 import { InsertItem } from '../../insert-item';
 
 export class TransactInsertItem extends TransactMethod {
-	constructor(
-		private readonly query: InsertItem
-	) {
+	constructor(private readonly query: InsertItem) {
 		super();
 	}
 
@@ -18,12 +17,14 @@ export class TransactInsertItem extends TransactMethod {
 		return {
 			Update: {
 				TableName: result.TableName,
-				Key: Converter.marshall(result.Key),
+				Key: marshall(result.Key),
 				ConditionExpression: result.ConditionExpression,
-				UpdateExpression: result.UpdateExpression !,
+				UpdateExpression: result.UpdateExpression!,
 				ExpressionAttributeNames: result.ExpressionAttributeNames,
-				ExpressionAttributeValues: result.ExpressionAttributeValues ? Converter.marshall(result.ExpressionAttributeValues) : undefined
-			}
+				ExpressionAttributeValues: result.ExpressionAttributeValues
+					? marshall(result.ExpressionAttributeValues)
+					: undefined,
+			},
 		};
 	}
 }
