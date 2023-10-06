@@ -73,7 +73,7 @@ export class TransactWrite extends Method implements Executable {
 	 * Execute the write transaction.
 	 */
 	async exec(): Promise<TransactWriteCommandOutput> {
-		const db = this.dynamodb.raw!;
+		const client = this.dynamodb.client!;
 
 		const query = this.buildRawQuery();
 
@@ -88,7 +88,7 @@ export class TransactWrite extends Method implements Executable {
 				}"`
 			);
 		}
-		return db.transactWrite(query);
+		return client.transactWrite(query);
 		// TODO is this still needed?
 		// return new Promise((resolve, reject) => {
 		// 	let cancellationReasons;

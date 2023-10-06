@@ -61,15 +61,17 @@ export class UpdateItem extends InsertItem implements Executable {
 	 * This method will execute the update item request that was built up.
 	 */
 	async exec(): Promise<any> {
-		const db = this.dynamodb.raw;
+		const client = this.dynamodb.client;
 
-		if (!db) {
+		if (!client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
-		return this.runQuery(() => db.update(this.buildRawQuery())).then((data) => {
-			// Return the attributes
-			return this.rawResult === true ? data : data.Attributes;
-		});
+		return this.runQuery(() => client.update(this.buildRawQuery())).then(
+			(data) => {
+				// Return the attributes
+				return this.rawResult === true ? data : data.Attributes;
+			}
+		);
 	}
 }

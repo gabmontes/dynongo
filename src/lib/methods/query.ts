@@ -58,9 +58,9 @@ export class Query extends BaseQuery implements Executable {
 			throw this.error;
 		}
 
-		const db = this.dynamodb.raw;
+		const client = this.dynamodb.client;
 
-		if (!db) {
+		if (!client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
@@ -68,7 +68,7 @@ export class Query extends BaseQuery implements Executable {
 
 		const queryInput = this.buildRawQuery();
 
-		return this.runQuery(() => db.query(queryInput)).then((data) => {
+		return this.runQuery(() => client.query(queryInput)).then((data) => {
 			if (queryInput.Select === "COUNT") {
 				// Return the count property if Select is set to count.
 				return data.Count || 0;

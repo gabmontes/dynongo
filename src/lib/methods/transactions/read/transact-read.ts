@@ -34,7 +34,7 @@ export class TransactRead extends Method implements Executable {
 	 * Execute the get transaction.
 	 */
 	async exec(): Promise<any[]> {
-		const db = this.dynamodb.raw!;
+		const client = this.dynamodb.client!;
 
 		const transactGetItemsInput = this.buildRawQuery();
 
@@ -46,7 +46,7 @@ export class TransactRead extends Method implements Executable {
 			);
 		}
 
-		const result = await db.transactGet(transactGetItemsInput);
+		const result = await client.transactGet(transactGetItemsInput);
 
 		return (result.Responses || []).map((response) =>
 			response.Item ? unmarshall(response.Item) : undefined

@@ -33,9 +33,9 @@ export class BatchWrite extends BaseMethod implements Executable {
 	 * Execute the batch write request.
 	 */
 	async exec(): Promise<any> {
-		const db = this.dynamodb.raw;
+		const client = this.dynamodb.client;
 
-		if (!db) {
+		if (!client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
@@ -53,7 +53,7 @@ export class BatchWrite extends BaseMethod implements Executable {
 
 		let query = this.buildRawQuery();
 		return this.runQuery(async () => {
-			const { UnprocessedItems } = await db.batchWrite(query);
+			const { UnprocessedItems } = await client.batchWrite(query);
 
 			if (UnprocessedItems && Object.keys(UnprocessedItems).length > 0) {
 				query = { RequestItems: UnprocessedItems };

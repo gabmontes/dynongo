@@ -87,18 +87,20 @@ export class DeleteItem extends Method implements Executable {
 	 * This method will execute the delete item request that was built up.
 	 */
 	async exec(): Promise<any> {
-		const db = this.dynamodb.raw;
+		const client = this.dynamodb.client;
 
-		if (!db) {
+		if (!client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
-		return this.runQuery(() => db.delete(this.buildRawQuery())).then((data) => {
-			if ((this.params.ReturnValues = "ALL_OLD")) {
-				return this.rawResult === true ? data : data.Attributes;
-			}
+		return this.runQuery(() => client.delete(this.buildRawQuery())).then(
+			(data) => {
+				if ((this.params.ReturnValues = "ALL_OLD")) {
+					return this.rawResult === true ? data : data.Attributes;
+				}
 
-			return;
-		});
+				return;
+			}
+		);
 	}
 }

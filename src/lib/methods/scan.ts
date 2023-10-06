@@ -32,9 +32,9 @@ export class Scan extends BaseQuery implements Executable {
 	 * Execute the scan.
 	 */
 	async exec(): Promise<any> {
-		const db = this.dynamodb.raw;
+		const client = this.dynamodb.client;
 
-		if (!db) {
+		if (!client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
@@ -42,28 +42,30 @@ export class Scan extends BaseQuery implements Executable {
 
 		const scanInput = this.buildRawQuery();
 
-		return this.runQuery(() => db.scan(this.buildRawQuery())).then((data) => {
-			if (scanInput.Select === "COUNT") {
-				// Return the count property if Select is set to count.
-				return data.Count || 0;
-			}
-
-			if (!data.Items) {
-				return [];
-			}
-
-			if (limit === 1) {
-				// If the limit is specifically set to 1, we should return the object instead of the array.
-				if (this.rawResult === true) {
-					data.Items = [data.Items[0]];
-					return data;
+		return this.runQuery(() => client.scan(this.buildRawQuery())).then(
+			(data) => {
+				if (scanInput.Select === "COUNT") {
+					// Return the count property if Select is set to count.
+					return data.Count || 0;
 				}
 
-				return data.Items[0];
-			}
+				if (!data.Items) {
+					return [];
+				}
 
-			// Resolve all the items
-			return this.rawResult === true ? data : data.Items;
-		});
+				if (limit === 1) {
+					// If the limit is specifically set to 1, we should return the object instead of the array.
+					if (this.rawResult === true) {
+						data.Items = [data.Items[0]];
+						return data;
+					}
+
+					return data.Items[0];
+				}
+
+				// Resolve all the items
+				return this.rawResult === true ? data : data.Items;
+			}
+		);
 	}
 }

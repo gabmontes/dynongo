@@ -22,7 +22,7 @@ export class ListTables extends Method implements Executable {
 	 * Execute the `ListTables` request.
 	 */
 	async exec(): Promise<string[]> {
-		if (!this.dynamodb.raw) {
+		if (!this.dynamodb.client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
@@ -35,10 +35,10 @@ export class ListTables extends Method implements Executable {
 	): Promise<string[]> {
 		let result = previousResult;
 
-		const db = this.dynamodb.raw!;
+		const client = this.dynamodb.client!;
 		const prefix = this.dynamodb.prefix;
 
-		const data = await db.send(new ListTablesCommand(params));
+		const data = await client.send(new ListTablesCommand(params));
 		result = result.concat(data.TableNames || []);
 
 		if (data.LastEvaluatedTableName) {

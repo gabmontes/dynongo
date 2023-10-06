@@ -42,7 +42,7 @@ export type DynamoDBOptions = Pick<
 	};
 
 export class DynamoDB {
-	public raw?: DynamoDBDocument;
+	public client?: DynamoDBDocument;
 	private options: Pick<DynamoDBOptions, "prefix" | "prefixDelimiter"> = {};
 	private _retries?: DynamoDBOptions["retries"];
 
@@ -105,7 +105,7 @@ export class DynamoDB {
 			requestHandler,
 		});
 
-		this.raw = DynamoDBDocument.from(client);
+		this.client = DynamoDBDocument.from(client);
 	}
 
 	get delimiter() {

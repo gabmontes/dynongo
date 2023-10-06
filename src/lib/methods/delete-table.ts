@@ -44,13 +44,13 @@ export class DeleteTable extends Method implements Executable {
 	 * This method will execute the delete table request that was built up.
 	 */
 	async exec(): Promise<void> {
-		const db = this.dynamodb.raw;
+		const client = this.dynamodb.client;
 
-		if (!db) {
+		if (!client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
-		return db
+		return client
 			.send(new DeleteTableCommand(this.buildRawQuery()))
 			.then(() => {
 				if (this.shouldWait === true) {
@@ -73,7 +73,7 @@ export class DeleteTable extends Method implements Executable {
 		} catch (error) {
 			if (
 				error instanceof Error &&
-				error.name !== "ResourceNotFoundExceptionn"
+				error.name !== "ResourceNotFoundException"
 			) {
 				// If the error is not a ResourceNotFoundException, throw it further down the chain
 				throw error;
@@ -84,11 +84,11 @@ export class DeleteTable extends Method implements Executable {
 	}
 
 	private async pollHelper() {
-		const db = this.dynamodb.raw!;
+		const client = this.dynamodb.client!;
 
 		await delay(this.waitMs);
 
-		const output = await db.send(
+		const output = await client.send(
 			new DescribeTableCommand({ TableName: this.table!.name })
 		);
 

@@ -59,13 +59,13 @@ export class CreateTable extends Method implements Executable {
 	 * This method will execute the create table request that was built up.
 	 */
 	async exec(): Promise<void> {
-		const db = this.dynamodb.raw;
+		const client = this.dynamodb.client;
 
-		if (!db) {
+		if (!client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
-		return db
+		return client
 			.send(new CreateTableCommand(this.buildRawQuery()))
 			.then(() => {
 				if (this.shouldWait === true) {
@@ -96,11 +96,11 @@ export class CreateTable extends Method implements Executable {
 	}
 
 	private async pollHelper() {
-		const db = this.dynamodb.raw!;
+		const client = this.dynamodb.client!;
 
 		await delay(this.waitMs);
 
-		const output = await db.send(
+		const output = await client.send(
 			new DescribeTableCommand({ TableName: this.table!.name })
 		);
 

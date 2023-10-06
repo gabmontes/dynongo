@@ -87,15 +87,15 @@ export class InsertItem extends Method implements Executable {
 	 * Execute the insert item request.
 	 */
 	async exec(): Promise<any> {
-		const db = this.dynamodb.raw;
+		const client = this.dynamodb.client;
 
-		if (!db) {
+		if (!client) {
 			throw new Error("Call .connect() before executing queries.");
 		}
 
 		const insertInput = this.buildRawQuery();
 
-		return this.runQuery(() => db.update(insertInput))
+		return this.runQuery(() => client.update(insertInput))
 			.then((data) => {
 				// Return the attributes
 				return this.rawResult === true ? data : data.Attributes;
