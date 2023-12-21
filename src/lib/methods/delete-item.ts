@@ -99,7 +99,7 @@ export class DeleteItem extends Method implements Executable {
 					return this.rawResult === true ? data : data.Attributes;
 				}
 
-				return;
+				return undefined;
 			}
 		);
 	}

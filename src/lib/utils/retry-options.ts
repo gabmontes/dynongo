@@ -17,7 +17,7 @@ export const configureRetryOptions = (
 	retries: number | RetryOptions | undefined
 ) => {
 	if (retries === undefined) {
-		return;
+		return undefined;
 	}
 
 	return typeof retries === "number"

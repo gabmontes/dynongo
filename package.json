@@ -18,15 +18,15 @@
 	],
 	"main": "dist/index.js",
 	"engines": {
-		"node": ">=8"
+		"node": ">=16"
 	},
 	"scripts": {
-		"prepublish": "npm run clean && npm run compile -- --declaration && del-cli dist/test",
-		"test": "echo 'Tests are disabled until they are fixed due to AWS-SDK v3 migration!",
-		"pretest": "npm run compile -- --sourceMap && cpy \"test/**/*.json\" ../dist --cwd=src --parents",
+		"clean": "del-cli dist",
 		"compile": "npm run clean && tsc",
 		"lint": "tslint --format stylish --project .",
-		"clean": "del-cli dist"
+		"prepublish": "npm run clean && npm run compile -- --declaration && del-cli dist/test",
+		"pretest": "npm run compile -- --sourceMap && cpy \"test/**/*.json\" ../dist --cwd=src --parents",
+		"test": "echo 'Tests are disabled until they are fixed due to AWS-SDK v3 migration!"
 	},
 	"files": [
 		"dist"
@@ -41,10 +41,11 @@
 		"nosql"
 	],
 	"dependencies": {
-		"@aws-sdk/client-dynamodb": "3.197.0",
-		"@aws-sdk/lib-dynamodb": "3.197.0",
-		"@aws-sdk/node-http-handler": "3.188.0",
-		"@aws-sdk/util-dynamodb": "3.197.0",
+		"@aws-sdk/client-dynamodb": "3.362.0",
+		"@aws-sdk/lib-dynamodb": "3.362.0",
+		"@aws-sdk/types": "3.468.0",
+		"@aws-sdk/util-dynamodb": "3.362.0",
+		"@smithy/node-http-handler": "2.2.1",
 		"delay": "4.1.0",
 		"is-object": "1.0.1",
 		"p-retry": "4.1.0"

@@ -3,8 +3,8 @@ import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import {
 	NodeHttpHandler,
 	NodeHttpHandlerOptions,
-} from "@aws-sdk/node-http-handler";
-import { Credentials } from "@aws-sdk/types";
+} from "@smithy/node-http-handler";
+import { AwsCredentialIdentity } from "@aws-sdk/types";
 import { Agent as HttpAgent, AgentOptions } from "http";
 import { Options as RetryOptions } from "p-retry";
 
@@ -28,7 +28,10 @@ export type DynamoDBOptions = Pick<
 	"endpoint" | "region"
 > &
 	Partial<
-		Pick<Credentials, "accessKeyId" | "secretAccessKey" | "sessionToken">
+		Pick<
+			AwsCredentialIdentity,
+			"accessKeyId" | "secretAccessKey" | "sessionToken"
+		>
 	> &
 	Pick<AgentOptions, "keepAlive"> & {
 		httpOptions?: Omit<NodeHttpHandlerOptions, "httpAgent" | "httpsAgent">;
@@ -90,22 +93,22 @@ export class DynamoDB {
 			}),
 		});
 
-		const client = new DynamoDBClient({
-			...(accessKeyId && secretAccessKey
-				? {
-						credentials: {
-							accessKeyId,
-							secretAccessKey,
-							sessionToken,
-						},
-				  }
-				: {}),
-			endpoint,
-			region,
-			requestHandler,
-		});
-
-		this.client = DynamoDBDocument.from(client);
+		this.client = DynamoDBDocument.from(
+			new DynamoDBClient({
+				...(accessKeyId && secretAccessKey
+					? {
+							credentials: {
+								accessKeyId,
+								secretAccessKey,
+								sessionToken,
+							},
+					  }
+					: {}),
+				endpoint,
+				region,
+				requestHandler,
+			})
+		);
 	}
 
 	get delimiter() {

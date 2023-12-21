@@ -1,3 +1,4 @@
+import { UpdateTableCommandInput } from "@aws-sdk/client-dynamodb";
 import { DynamoDB } from "./dynamodb";
 import {
 	Query,
@@ -7,6 +8,7 @@ import {
 	DeleteItem,
 	DeleteTable,
 	CreateTable,
+	UpdateTableConfig,
 } from "./methods";
 import * as table from "./utils/table";
 import { operators as updateOperators } from "./utils/update";
@@ -191,7 +193,7 @@ export class Table {
 	/**
 	 * This method will create a new table.
 	 *
-	 * @param	schema			The schema object.
+	 * @param	schema The schema object.
 	 */
 	create(schema: Schema) {
 		if (typeof schema !== "object") {
@@ -202,5 +204,12 @@ export class Table {
 
 		// Create a new CreateTable object
 		return new CreateTable(this, this.dynamodb).initialize(schema);
+	}
+
+	/**
+	 * This method updates the table configuration
+	 */
+	updateConfig(params: Omit<UpdateTableCommandInput, "TableName">) {
+		return new UpdateTableConfig(this, this.dynamodb).initialize(params);
 	}
 }
