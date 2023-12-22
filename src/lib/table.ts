@@ -7,8 +7,10 @@ import {
 	UpdateItem,
 	DeleteItem,
 	DeleteTable,
+	DescribeTimeToLive,
 	CreateTable,
 	UpdateTableConfig,
+	UpdateTimeToLive,
 } from "./methods";
 import * as table from "./utils/table";
 import { operators as updateOperators } from "./utils/update";
@@ -207,9 +209,23 @@ export class Table {
 	}
 
 	/**
+	 * This method will return the time to live status of the table.
+	 */
+	describeTimeToLive() {
+		return new DescribeTimeToLive(this, this.dynamodb);
+	}
+
+	/**
 	 * This method updates the table configuration
 	 */
 	updateConfig(params: Omit<UpdateTableCommandInput, "TableName">) {
 		return new UpdateTableConfig(this, this.dynamodb).initialize(params);
+	}
+
+	/**
+	 * This method updates the time to live configuration of the table
+	 */
+	updateTimeToLive(params: { attribute: string; enabled: boolean }) {
+		return new UpdateTimeToLive(this, this.dynamodb).initialize(params);
 	}
 }
