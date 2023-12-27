@@ -1,13 +1,16 @@
-import delay from 'delay';
-import { Method } from './method';
-import { Executable } from './executable';
-import { Schema } from '../types';
-import { DynamoDB } from '../dynamodb';
-import { Table } from '../table';
-import { CreateTableInput } from 'aws-sdk/clients/dynamodb';
+import {
+	CreateTableCommand,
+	CreateTableCommandInput,
+	DescribeTableCommand,
+} from "@aws-sdk/client-dynamodb";
+import delay from "delay";
+import { Method } from "./method";
+import { Executable } from "./executable";
+import { Schema } from "../types";
+import { DynamoDB } from "../dynamodb";
+import { Table } from "../table";
 
 export class CreateTable extends Method implements Executable {
-
 	private shouldWait = false;
 	private waitMs: number = 1000;
 	private schema: any;
@@ -45,32 +48,33 @@ export class CreateTable extends Method implements Executable {
 	/**
 	 * Builds and returns the raw DynamoDB query object.
 	 */
-	buildRawQuery(): CreateTableInput {
+	buildRawQuery(): CreateTableCommandInput {
 		return {
 			...this.schema,
-			TableName: (this.table!).name
+			TableName: this.table!.name,
 		};
 	}
 
 	/**
 	 * This method will execute the create table request that was built up.
 	 */
-	exec(): Promise<void> {
-		const db = this.dynamodb.raw;
+	async exec(): Promise<void> {
+		const client = this.dynamodb.client;
 
-		if (!db) {
-			return Promise.reject(new Error('Call .connect() before executing queries.'));
+		if (!client) {
+			throw new Error("Call .connect() before executing queries.");
 		}
 
-		return db.createTable(this.buildRawQuery()).promise()
+		return client
+			.send(new CreateTableCommand(this.buildRawQuery()))
 			.then(() => {
 				if (this.shouldWait === true) {
 					// Start polling if await is set to true
 					return this.poll();
 				}
 			})
-			.catch(err => {
-				if (err && err.name !== 'ResourceInUseException') {
+			.catch((err) => {
+				if (err && err.name !== "ResourceInUseException") {
 					// If it is a ResourceInUseException, throw it further down the chain
 					throw err;
 				}
@@ -84,7 +88,7 @@ export class CreateTable extends Method implements Executable {
 			return;
 		}
 
-		if (result.Table.TableStatus.toLowerCase() === 'active') {
+		if (result.Table.TableStatus.toLowerCase() === "active") {
 			return;
 		}
 
@@ -92,10 +96,14 @@ export class CreateTable extends Method implements Executable {
 	}
 
 	private async pollHelper() {
-		const db = this.dynamodb.raw!;
+		const client = this.dynamodb.client!;
 
 		await delay(this.waitMs);
 
-		return await db.describeTable({TableName: (this.table!).name}).promise();
+		const output = await client.send(
+			new DescribeTableCommand({ TableName: this.table!.name })
+		);
+
+		return output;
 	}
 }

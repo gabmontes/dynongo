@@ -1,26 +1,26 @@
-import { TransactWriteItemsInput, TransactWriteItem } from 'aws-sdk/clients/dynamodb';
-import { Method } from '../../method';
-import { Executable } from '../../executable';
-import { DynamoDB } from '../../../dynamodb';
-import { InsertItem } from '../../insert-item';
-import { UpdateItem } from '../../update-item';
-import { DeleteItem } from '../../delete-item';
-import { TransactUpdateItem } from './transact-update-item';
-import { TransactDeleteItem } from './transact-delete-item';
-import { TransactInsertItem } from './transact-insert-item';
-import { Query } from '../../query';
-import { generateConditionCheck } from '../utils/condition-check';
+import { TransactWriteItem } from "@aws-sdk/client-dynamodb";
+import {
+	TransactWriteCommandInput,
+	TransactWriteCommandOutput,
+} from "@aws-sdk/lib-dynamodb";
+import { Method } from "../../method";
+import { Executable } from "../../executable";
+import { DynamoDB } from "../../../dynamodb";
+import { InsertItem } from "../../insert-item";
+import { UpdateItem } from "../../update-item";
+import { DeleteItem } from "../../delete-item";
+import { TransactUpdateItem } from "./transact-update-item";
+import { TransactDeleteItem } from "./transact-delete-item";
+import { TransactInsertItem } from "./transact-insert-item";
+import { Query } from "../../query";
+import { generateConditionCheck } from "../utils/condition-check";
 
 export type WriteItem = InsertItem | UpdateItem | DeleteItem;
 
-export class TransactWrite extends Method  implements Executable {
-
+export class TransactWrite extends Method implements Executable {
 	private conditions: Query[] = [];
 
-	constructor(
-		dynamodb: DynamoDB,
-		private readonly actions: WriteItem[]
-	) {
+	constructor(dynamodb: DynamoDB, private readonly actions: WriteItem[]) {
 		super(null, dynamodb);
 	}
 
@@ -38,8 +38,8 @@ export class TransactWrite extends Method  implements Executable {
 	/**
 	 * Builds and returns the raw DynamoDB query object.
 	 */
-	buildRawQuery(): TransactWriteItemsInput {
-		const items = this.actions.map(action => {
+	buildRawQuery(): TransactWriteCommandInput {
+		const items = this.actions.map((action) => {
 			if (action instanceof UpdateItem) {
 				return new TransactUpdateItem(action);
 			}
@@ -52,60 +52,69 @@ export class TransactWrite extends Method  implements Executable {
 				return new TransactDeleteItem(action);
 			}
 
-			throw new Error('Unknown TransactWrite action provided');
+			throw new Error("Unknown TransactWrite action provided");
 		});
 
-		const conditions = this.conditions.map<TransactWriteItem>(condition => {
+		const conditions = this.conditions.map<TransactWriteItem>((condition) => {
 			return {
-				ConditionCheck: generateConditionCheck(condition)
+				ConditionCheck: generateConditionCheck(condition),
 			};
 		});
 
 		return {
 			TransactItems: [
 				...conditions,
-				...items.map(item => item.buildRawQuery())
-			]
+				...items.map((item) => item.buildRawQuery()),
+			],
 		};
 	}
 
 	/**
 	 * Execute the write transaction.
 	 */
-	async exec(): Promise<void> {
-		const db = this.dynamodb.raw !;
+	async exec(): Promise<TransactWriteCommandOutput> {
+		const client = this.dynamodb.client!;
 
 		const query = this.buildRawQuery();
 
-		if (query.TransactItems.length > 25) {
-			throw new Error(`Number of transaction items should be less than or equal to \`25\`, got \`${query.TransactItems.length}\``);
+		if ((query.TransactItems?.length ?? 0) === 0) {
+			throw new Error("No transaction items provided");
 		}
 
-		const request = db.transactWriteItems(query);
+		if (query.TransactItems!.length > 25) {
+			throw new Error(
+				`Number of transaction items should be less than or equal to "25", got "${
+					query.TransactItems!.length
+				}"`
+			);
+		}
+		return client.transactWrite(query);
+		// TODO is this still needed?
+		// return new Promise((resolve, reject) => {
+		// 	let cancellationReasons;
 
-		return new Promise((resolve, reject) => {
-			let cancellationReasons;
+		// 	request.on("extractError", (response) => {
+		// 		try {
+		// 			cancellationReasons = JSON.parse(
+		// 				response.httpResponse.body.toString()
+		// 			).CancellationReasons;
+		// 		} catch (err) {
+		// 			// If for some reason we can't parse the error, we still want everything to work
+		// 			console.error("Error extracting cancellation error", err);
+		// 		}
+		// 	});
 
-			request.on('extractError', (response) => {
-				try {
-					cancellationReasons = JSON.parse(response.httpResponse.body.toString()).CancellationReasons;
-				} catch (err) {
-					// If for some reason we can't parse the error, we still want everything to work
-					console.error('Error extracting cancellation error', err);
-				}
-			});
+		// 	request.send((err) => {
+		// 		if (err) {
+		// 			if (cancellationReasons) {
+		// 				(err as any).cancellationReasons = cancellationReasons;
+		// 			}
 
-			request.send((err) => {
-				if (err) {
-					if (cancellationReasons) {
-						(err as any).cancellationReasons = cancellationReasons;
-					}
+		// 			return reject(err);
+		// 		}
 
-					return reject(err);
-				}
-
-				return resolve();
-			});
-		});
+		// 		return resolve();
+		// 	});
+		// });
 	}
 }

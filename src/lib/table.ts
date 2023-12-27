@@ -1,16 +1,27 @@
-import { DynamoDB } from './dynamodb';
-import { Query, Scan, InsertItem, UpdateItem, DeleteItem, DeleteTable, CreateTable } from './methods';
-import * as table from './utils/table';
-import { operators as updateOperators } from './utils/update';
-import { Map, Schema } from './types';
-import { PutRequest, DeleteRequest } from './methods/batch';
+import { UpdateTableCommandInput } from "@aws-sdk/client-dynamodb";
+import { DynamoDB } from "./dynamodb";
+import {
+	Query,
+	Scan,
+	InsertItem,
+	UpdateItem,
+	DeleteItem,
+	DeleteTable,
+	DescribeTimeToLive,
+	CreateTable,
+	UpdateTableConfig,
+	UpdateTimeToLive,
+} from "./methods";
+import * as table from "./utils/table";
+import { operators as updateOperators } from "./utils/update";
+import { Map, Schema } from "./types";
+import { PutRequest, DeleteRequest } from "./methods/batch";
 
 export interface TableOptions {
 	raw?: boolean;
 }
 
 export class Table {
-
 	private options: TableOptions;
 
 	constructor(
@@ -20,7 +31,7 @@ export class Table {
 	) {
 		this.options = {
 			raw: false,
-			...options
+			...options,
 		};
 	}
 
@@ -55,7 +66,7 @@ export class Table {
 	}
 
 	/**
-	 * Initialize a query builder that is limitted to one result.
+	 * Initialize a query builder that is limited to one result.
 	 *
 	 * @param  query			The query for the index to filter on.
 	 * @param  indexName		The name of the global secondary index.
@@ -75,7 +86,7 @@ export class Table {
 		const del = new DeleteItem(this, this.dynamodb);
 
 		// Start by invoking the remove method
-		return del.initialize(query, {result: true});
+		return del.initialize(query, { result: true });
 	}
 
 	/**
@@ -89,7 +100,7 @@ export class Table {
 		const put = new InsertItem(this, this.dynamodb);
 
 		// Initialize the insert item object
-		return put.initialize(key, {$set: data});
+		return put.initialize(key, { $set: data });
 	}
 
 	/**
@@ -136,9 +147,9 @@ export class Table {
 			}
 
 			// Merge `$set` with the other data values
-			params['$set'] = {
-				...params['$set'],
-				...data
+			params["$set"] = {
+				...params["$set"],
+				...data,
 			};
 
 			// If upsert is set to true, it does a update or insert
@@ -157,7 +168,7 @@ export class Table {
 	 */
 	upsert(key: any, data: any) {
 		// Use the update method but set `upsert` to true
-		return this.update(key, data, {upsert: true});
+		return this.update(key, data, { upsert: true });
 	}
 
 	/**
@@ -184,14 +195,37 @@ export class Table {
 	/**
 	 * This method will create a new table.
 	 *
-	 * @param	schema			The schema object.
+	 * @param	schema The schema object.
 	 */
 	create(schema: Schema) {
-		if (typeof schema !== 'object') {
-			throw new TypeError(`Expected \`schema\` to be of type \`object\`, got \`${typeof schema}\``);
+		if (typeof schema !== "object") {
+			throw new TypeError(
+				`Expected \`schema\` to be of type \`object\`, got \`${typeof schema}\``
+			);
 		}
 
 		// Create a new CreateTable object
 		return new CreateTable(this, this.dynamodb).initialize(schema);
+	}
+
+	/**
+	 * This method will return the time to live status of the table.
+	 */
+	describeTimeToLive() {
+		return new DescribeTimeToLive(this, this.dynamodb);
+	}
+
+	/**
+	 * This method updates the table configuration
+	 */
+	updateConfig(params: Omit<UpdateTableCommandInput, "TableName">) {
+		return new UpdateTableConfig(this, this.dynamodb).initialize(params);
+	}
+
+	/**
+	 * This method updates the time to live configuration of the table
+	 */
+	updateTimeToLive(params: { attribute: string; enabled: boolean }) {
+		return new UpdateTimeToLive(this, this.dynamodb).initialize(params);
 	}
 }

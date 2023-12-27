@@ -1,13 +1,11 @@
-import { TransactGetItem, Converter } from 'aws-sdk/clients/dynamodb';
+import { TransactGetItem } from '@aws-sdk/client-dynamodb';
+import { marshall } from '@aws-sdk/util-dynamodb';
 import { TransactMethod } from '../transact-method';
 import { Query } from '../../query';
 import { keyParser } from '../utils/key-parser';
 
 export class TransactQuery extends TransactMethod {
-
-	constructor(
-		private readonly query: Query
-	) {
+	constructor(private readonly query: Query) {
 		super();
 	}
 
@@ -18,7 +16,9 @@ export class TransactQuery extends TransactMethod {
 		const build = this.query.buildRawQuery();
 
 		if (build.IndexName) {
-			throw new Error('Can not use a Global Secondary Index in a read transaction');
+			throw new Error(
+				'Can not use a Global Secondary Index in a read transaction'
+			);
 		}
 
 		if (build.FilterExpression) {
@@ -30,10 +30,10 @@ export class TransactQuery extends TransactMethod {
 		return {
 			Get: {
 				TableName: build.TableName,
-				Key: Converter.marshall(key.Key),
+				Key: marshall(key.Key),
 				ExpressionAttributeNames: key.AttributeNames,
-				ProjectionExpression: build.ProjectionExpression
-			}
+				ProjectionExpression: build.ProjectionExpression,
+			},
 		};
 	}
 }

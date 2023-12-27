@@ -1,14 +1,15 @@
-import { QueryInput, Converter, ConditionCheck } from 'aws-sdk/clients/dynamodb';
+import { ConditionCheck } from '@aws-sdk/client-dynamodb';
+import { marshall } from '@aws-sdk/util-dynamodb';
 import { Query } from '../../query';
 import { keyParser } from './key-parser';
 
 /**
  * Generate a transaction `ConditionCheck` based on a `Query`.
  *
- * @param	query			Query to generate the check.
+ * @param	query Query to generate the check.
  */
 export const generateConditionCheck = (query: Query): ConditionCheck => {
-	const build: QueryInput = query.buildRawQuery();
+	const build = query.buildRawQuery();
 
 	if (!build.FilterExpression) {
 		// A `ConditionCheck` requires a `FilterExpression`
@@ -19,9 +20,9 @@ export const generateConditionCheck = (query: Query): ConditionCheck => {
 
 	return {
 		TableName: build.TableName,
-		Key: Converter.marshall(result.Key),
+		Key: marshall(result.Key),
 		ConditionExpression: build.FilterExpression,
 		ExpressionAttributeNames: result.AttributeNames,
-		ExpressionAttributeValues: Converter.marshall(result.AttributeValues)
+		ExpressionAttributeValues: marshall(result.AttributeValues),
 	};
 };

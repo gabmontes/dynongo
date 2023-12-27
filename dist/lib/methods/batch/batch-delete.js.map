@@ -1,0 +1,1 @@
+{"version":3,"file":"batch-delete.js","sourceRoot":"","sources":["../../../../src/lib/methods/batch/batch-delete.ts"],"names":[],"mappings":";;;AAAA,6CAAyC;AAGzC,MAAa,aAAc,SAAQ,sBAAS;IAE3C,YAAY,KAAK,EAAE,GAAQ;QAC1B,KAAK,CAAC,KAAK,EAAE,GAAG,CAAC,CAAC;IACnB,CAAC;IAED,aAAa;QACZ,OAAO,EAAC,aAAa,EAAE,EAAE,GAAG,EAAE,IAAI,CAAC,GAAG,EAAC,EAAC,CAAC;IAC1C,CAAC;CACD;AATD,sCASC"}

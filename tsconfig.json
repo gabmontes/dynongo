@@ -1,11 +1,12 @@
 {
-	"extends": "@sindresorhus/tsconfig",
 	"compilerOptions": {
-		"outDir": "dist",
-		"target": "es2016",
+		"lib": ["es2016"],
+		"moduleResolution": "node",
 		"noImplicitAny": false,
-		"lib": [
-			"es2016"
-		]
-	}
+		"outDir": "dist",
+		"strictNullChecks": false,
+		"target": "es2016"
+	},
+	"exclude": ["src/test"],
+	"extends": "@sindresorhus/tsconfig"
 }

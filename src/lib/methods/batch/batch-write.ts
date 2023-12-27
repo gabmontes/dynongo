@@ -1,24 +1,21 @@
-import { BatchWriteItemInput } from 'aws-sdk/clients/dynamodb';
-import { Executable } from '../executable';
-import { DynamoDB } from '../../dynamodb';
-import { BatchItem } from './batch-item';
-import { BaseMethod } from '../base-method';
-import { UnprocessedItemsException } from '../../errors/unprocessed-items-exception';
+import { BatchWriteCommandInput } from "@aws-sdk/lib-dynamodb";
+import { Executable } from "../executable";
+import { DynamoDB } from "../../dynamodb";
+import { BatchItem } from "./batch-item";
+import { BaseMethod } from "../base-method";
+import { UnprocessedItemsException } from "../../errors/unprocessed-items-exception";
 
 export class BatchWrite extends BaseMethod implements Executable {
-
-	constructor(
-		dynamodb: DynamoDB,
-		private items: BatchItem[]) {
+	constructor(dynamodb: DynamoDB, private items: BatchItem[]) {
 		super(null, dynamodb);
 	}
 
 	/**
 	 * Builds and returns the raw DynamoDB query object.
 	 */
-	buildRawQuery(): BatchWriteItemInput {
+	buildRawQuery(): BatchWriteCommandInput {
 		const request = {
-			RequestItems: {}
+			RequestItems: {},
 		};
 
 		for (const item of this.items) {
@@ -35,31 +32,34 @@ export class BatchWrite extends BaseMethod implements Executable {
 	/**
 	 * Execute the batch write request.
 	 */
-	exec(): Promise<any> {
-		const db = this.dynamodb.dynamodb;
+	async exec(): Promise<any> {
+		const client = this.dynamodb.client;
 
-		if (!db) {
-			return Promise.reject(new Error('Call .connect() before executing queries.'));
+		if (!client) {
+			throw new Error("Call .connect() before executing queries.");
 		}
 
 		if (this.items.length < 1) {
-			return Promise.reject(new Error('Items can not be empty.'));
+			throw new Error("Items can not be empty.");
 		}
 
 		if (this.items.length > 25) {
-			return Promise.reject(new Error('Can not insert more than 25 items at a time.'));
+			throw new Error("Can not insert more than 25 items at a time.");
 		}
 
 		if (!this.items) {
-			return Promise.reject(new Error('params object was undefined.'));
+			throw new Error("params object was undefined.");
 		}
 
 		let query = this.buildRawQuery();
 		return this.runQuery(async () => {
-			const {UnprocessedItems} = await db.batchWrite(query).promise();
+			const { UnprocessedItems } = await client.batchWrite(query);
+
 			if (UnprocessedItems && Object.keys(UnprocessedItems).length > 0) {
-				query = {RequestItems: UnprocessedItems};
-				throw new UnprocessedItemsException(`${Object.keys(UnprocessedItems).length} could not be processed`);
+				query = { RequestItems: UnprocessedItems };
+				throw new UnprocessedItemsException(
+					`${Object.keys(UnprocessedItems).length} could not be processed`
+				);
 			}
 		});
 	}
