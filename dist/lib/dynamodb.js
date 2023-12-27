@@ -41,11 +41,10 @@ class DynamoDB {
                     sessionToken,
                 },
             }
-            : {})), { endpoint,
-            region,
-            requestHandler, 
+            : {})), { endpoint, 
             // maxRetries property has been renamed from v2 https://github.com/aws/aws-sdk-js-v3/issues/4049
-            maxAttempts: typeof retries === "number" ? retries : undefined })));
+            maxAttempts: typeof retries === "number" ? retries : undefined, region,
+            requestHandler })));
     }
     get delimiter() {
         return this.options.prefixDelimiter;
